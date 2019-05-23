@@ -52,7 +52,8 @@ while [ "$#" -gt 0 ] && [ "${endofopts}" -eq 0 ]; do
                 exit 1
             fi
             case "$1" in
-                -e)
+                -e | -f)
+                    pattern_opt="$1"
                     pattern="$2"
                     pattern_found=1
                     shift 2
@@ -87,8 +88,9 @@ while [ "$#" -gt 0 ] && [ "${endofopts}" -eq 0 ]; do
     esac
 done
 
-# if no -e option was found, take next argument as grep-pattern
+# if no -e or -f option was found, take next argument as grep-pattern
 if [ "${pattern_found}" -lt 1 ]; then
+    pattern_opt="-e"
     if [ "$#" -ge 1 ]; then
         pattern="$1"
         shift
@@ -106,7 +108,7 @@ if [ "$#" -lt 1 ]; then
     # ... on stdin
     set -f # Disable file name generation (globbing).
     # shellcheck disable=SC2086
-    "${zcat}" -fq - | "${grep}" ${grep_args} -- "${pattern}" -
+    "${zcat}" -fq - | "${grep}" ${grep_args} ${pattern_opt} "${pattern}" -
     EXIT_CODE=$?
     set +f
 else
@@ -117,7 +119,7 @@ else
     set -f
     while [ "$#" -gt 0 ]; do
         # shellcheck disable=SC2086
-        "${zcat}" -fq -- "$1" | "${grep}" --label="${1}" ${grep_args} -- "${pattern}" -
+        "${zcat}" -fq -- "$1" | "${grep}" --label="${1}" ${grep_args} ${pattern_opt} "${pattern}" -
         [ "$?" -ne 0 ] && EXIT_CODE=1
         shift
     done
